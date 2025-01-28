@@ -4,22 +4,42 @@ from gtts import gTTS
 import torch
 from config import mode
 import io
+import base64
 
+# Device setup
 device = 'cpu'
 model, feature_extractor, tokenizer = mode()
 
+# Audio Playback with Autoplay
+def autoplay_audio3(file, autoplay=True):
+    """Plays the audio file with autoplay option."""
+    b64 = base64.b64encode(file).decode()
+    if autoplay:
+        md = f"""
+            <audio id="audioTag" controls autoplay>
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg" format="audio/mpeg">
+            </audio>
+        """
+    else:
+        md = f"""
+            <audio id="audioTag" controls>
+            <source src="data:audio/mp3;base64,{b64}" type="audio/mpeg" format="audio/mpeg">
+            </audio>
+        """
+    st.markdown(md, unsafe_allow_html=True)
+
 # Text-to-Speech function using gTTS
 def text_to_speech(text):
+    """Generates speech from text using gTTS."""
     tts = gTTS(text=text, lang='en')
-    # Save to an in-memory file
     audio_file = io.BytesIO()
     tts.write_to_fp(audio_file)
-    audio_file.seek(0)  # Reset pointer to the beginning
-    # Use Streamlit's built-in audio playback
-    st.audio(audio_file, format="audio/mp3")
+    audio_file.seek(0)
+    return audio_file.read()
 
-# Prediction function
+# Caption Prediction
 def predict_caption(image):
+    """Predicts the caption for the uploaded image."""
     st.image(image, caption="Captured Image", use_container_width=True)
     
     # Preprocess image
@@ -73,9 +93,9 @@ if uploaded_file is not None:
         predicted_caption = predict_caption(image)
         st.success(predicted_caption)
         
-        # Add TTS Button
-        if st.button("🔊 Play Caption"):
-            text_to_speech(predicted_caption)
+        # Generate TTS audio and autoplay
+        audio_bytes = text_to_speech(predicted_caption)
+        autoplay_audio3(audio_bytes)
     except Exception as e:
         st.error(f"An error occurred: {e}")
     
@@ -93,9 +113,9 @@ elif camera_input is not None:
         predicted_caption = predict_caption(image)
         st.success(predicted_caption)
         
-        # Add TTS Button
-        if st.button("🔊 Play Caption"):
-            text_to_speech(predicted_caption)
+        # Generate TTS audio and autoplay
+        audio_bytes = text_to_speech(predicted_caption)
+        autoplay_audio3(audio_bytes)
     except Exception as e:
         st.error(f"An error occurred: {e}")
     
