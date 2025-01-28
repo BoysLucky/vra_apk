@@ -1,16 +1,22 @@
 import streamlit as st
 from PIL import Image
-import pyttsx3
+from gtts import gTTS
 import torch
 from config import mode
+import io
 
 device = 'cpu'
 model, feature_extractor, tokenizer = mode()
 
-# Text-to-Speech setup
-engine = pyttsx3.init()
-engine.setProperty('rate', 150)  # Set speech rate
-engine.setProperty('volume', 1)  # Set volume level (0.0 to 1.0)
+# Text-to-Speech function using gTTS
+def text_to_speech(text):
+    tts = gTTS(text=text, lang='en')
+    # Save to an in-memory file
+    audio_file = io.BytesIO()
+    tts.write_to_fp(audio_file)
+    audio_file.seek(0)  # Reset pointer to the beginning
+    # Use Streamlit's built-in audio playback
+    st.audio(audio_file, format="audio/mp3")
 
 # Prediction function
 def predict_caption(image):
@@ -25,11 +31,6 @@ def predict_caption(image):
         generated_text = tokenizer.batch_decode(generated_ids, skip_special_tokens=True)
     
     return generated_text[0]
-
-# Text-to-Speech function
-def text_to_speech(text):
-    engine.say(text)
-    engine.runAndWait()
 
 # Custom CSS for centering content
 st.markdown("""
